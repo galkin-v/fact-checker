@@ -1,0 +1,17 @@
+{
+  "request_id": "contest-demo-001",
+  "product": "demo_card",
+  "checklist_version": "demo-2026-07",
+  "model": "galkinv42/qwen3_5_sft_74869",
+  "status": "complete",
+  "violations": [
+    {
+      "checklist_id": 101,
+      "question": "Сколько стоит выпуск виртуальной карты?",
+      "expected_answer": "Выпуск виртуальной карты бесплатный.",
+      "explanation": "Сотрудник назвал плату 299 рублей, хотя по чеклисту выпуск бесплатный."
+    }
+  ],
+  "warnings": []
+}
+

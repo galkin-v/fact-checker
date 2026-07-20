@@ -1,0 +1,54 @@
+[project]
+name = "fact-checker"
+version = "1.0.0"
+description = "Checklist-grounded fact checking service for consultation transcripts"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.116.0,<1",
+    "httpx>=0.28.1,<1",
+    "json-repair>=0.52.0,<1",
+    "prometheus-client>=0.22.0,<1",
+    "pydantic-settings>=2.10.0,<3",
+    "uvicorn[standard]>=0.35.0,<1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.16.0,<2",
+    "pytest>=8.4.0,<9",
+    "pytest-asyncio>=1.0.0,<2",
+    "pytest-cov>=6.2.0,<7",
+    "ruff>=0.12.0,<1",
+]
+
+[project.scripts]
+fact-checker = "fact_checker.__main__:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fact_checker"]
+
+[tool.pytest.ini_options]
+addopts = "-q --strict-markers --cov=fact_checker --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "ASYNC", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/fact_checker/prompts.py" = ["RUF001"]
+"tests/*" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["fact_checker"]

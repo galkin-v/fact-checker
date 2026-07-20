@@ -1,0 +1,76 @@
+name: fact-checker
+
+services:
+  api:
+    build:
+      context: .
+      target: runtime
+    image: fact-checker-api:1.0.0
+    init: true
+    restart: unless-stopped
+    environment:
+      FACT_CHECKER_MODEL_BASE_URL: http://model:8000/v1
+      FACT_CHECKER_MODEL_ID: ${MODEL_ID:-galkinv42/qwen3_5_sft_74869}
+      FACT_CHECKER_MODEL_API_KEY: ${MODEL_API_KEY:-local-model-token}
+      FACT_CHECKER_LOG_LEVEL: ${FACT_CHECKER_LOG_LEVEL:-INFO}
+      FACT_CHECKER_MODEL_TIMEOUT_SECONDS: ${FACT_CHECKER_MODEL_TIMEOUT_SECONDS:-180}
+      FACT_CHECKER_MODEL_MAX_TOKENS: ${FACT_CHECKER_MODEL_MAX_TOKENS:-4096}
+      FACT_CHECKER_MODEL_MAX_CONCURRENCY: ${FACT_CHECKER_MODEL_MAX_CONCURRENCY:-5}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ${CHECKLIST_FILE:-./data/checklists.json}:/app/data/checklists.json:ro
+    depends_on:
+      model:
+        condition: service_healthy
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+
+  model:
+    image: vllm/vllm-openai:v0.19.1
+    restart: unless-stopped
+    ipc: host
+    environment:
+      HF_TOKEN: ${HF_TOKEN:?Set HF_TOKEN in .env to access the private model}
+    volumes:
+      - huggingface-cache:/root/.cache/huggingface
+    command:
+      - --model
+      - ${MODEL_ID:-galkinv42/qwen3_5_sft_74869}
+      - --served-model-name
+      - ${MODEL_ID:-galkinv42/qwen3_5_sft_74869}
+      - --api-key
+      - ${MODEL_API_KEY:-local-model-token}
+      - --max-model-len
+      - ${MODEL_MAX_LEN:-8192}
+      - --gpu-memory-utilization
+      - ${MODEL_GPU_MEMORY_UTILIZATION:-0.90}
+      - --trust-remote-code
+      - --generation-config
+      - vllm
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"
+      interval: 20s
+      timeout: 5s
+      start_period: 10m
+      retries: 5
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: ${GPU_COUNT:-1}
+              capabilities: [gpu]
+
+volumes:
+  huggingface-cache:
+
